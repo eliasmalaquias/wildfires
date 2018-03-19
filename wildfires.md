@@ -3,30 +3,33 @@ Intro to Data Science - Wildfires dataset exploratory analysis
 Elias M Guerra
 3/19/2018
 
-Big monkey farts
-----------------
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
 ``` r
-summary(cars)
+library(tidyverse)
+library(stringr)
+library(knitr)
+library(data.table)
+xlab_horiz <- theme(axis.text.x=element_text(angle=90, hjust=1))
+
+ff <- fread('~/Documents/r/math216/fires_shortversion.csv', stringsAsFactors = F)
 ```
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+    ## 
+    Read 48.4% of 1880465 rows
+    Read 93.1% of 1880465 rows
+    Read 1880465 rows and 9 (of 9) columns from 0.105 GB file in 00:00:04
 
-Including Plots
----------------
+``` r
+ff$year <- ff$fire_year
 
-You can also embed plots, for example:
+ff %>% ggplot() + geom_bar(aes(reorder(state,state,function(x)-length(x)), fill = fire_size_class)) + 
+  xlab_horiz +
+  scale_fill_discrete(name = "Fire size class" ) +
+  ggtitle("Wildfires per state") +
+  xlab("states")
+```
 
-![](wildfires_files/figure-markdown_github-ascii_identifiers/pressure-1.png)
+![](wildfires_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-1-1.png)
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+``` r
+world <- map_data("world")
+```
