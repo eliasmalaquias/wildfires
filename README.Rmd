@@ -23,21 +23,22 @@ library(data.table)
 # fires <- tbl(conn, "Fires") %>% collect()
 # write_csv(fires, '~/Documents/r/math216/fires.csv')
 # ff <- read.csv('~/Documents/r/math216/fires.csv')
-# print(object.size(ff), units = 'Gb') # 0.9
+# print(object.size(ff), units = 'Gb') # 0.9. Way too big! 
+# Note how much smaller fire_shortversion.csv is.
 # colnames(ff) <- tolower(colnames(ff))
 # ff <- ff[,c(2:8,10,12)]
 # write_csv(ff, '~/Documents/r/math216/fires_shortversion.csv')
+
+ff <- fread('~/Documents/r/math216/fires_shortversion.csv')
+ff$year <- ff$fire_year
 ```
 
 We'll start by visualizing the frequency of fires by state. 
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-ff <- fread('~/Documents/r/math216/fires_shortversion.csv', stringsAsFactors = F)
-ff$year <- ff$fire_year
-
 ff %>%
   ggplot() + 
-  geom_bar(aes(reorder(state, state, function(x) - length(x)) )) +
+  geom_bar(aes(reorder(state, state, function(x) - length(x)), fill = fire_size_class )) +
   theme(axis.text.x=element_text(angle=90, hjust=1)) +
   scale_fill_discrete(name = "Fire size class") +
   ggtitle("Wildfires per state") +
@@ -49,8 +50,8 @@ ggplot() +
   geom_map(data=world, map=world, aes(x=long, y=lat, map_id=region), color="white", size=0.05, alpha=1/4) + 
   geom_point(data = sample_n(ff, 10000), aes(longitude, latitude, color = fire_size_class), alpha = .1) +
   ylim(10,75) + xlim(-175,-40) +
-  coord_quickmap() + 
-  guides(color = F)
+  coord_quickmap() +
+  guides(color = "none")
 ```
 
 There seem to be a lot of fires on the west coast as you might expect, but it seems there are also a lot of fires going on in the south. The distribution is somewhat unexpected. This is because we are looking at fires of all sizes. These are what the size classes mean:
@@ -82,7 +83,6 @@ ggplot() +
   geom_map(data=world, map=world, aes(x=long, y=lat, map_id=region), color="white", size=0.05, alpha=1/4) +
   geom_point(data = ff[ff$fire_size_class %in% c("F", "G"),], aes(longitude, latitude, color = fire_size_class), alpha = .1) +
   ylim(10,75) + xlim(-175,-40) +
-  coord_quickmap() +
-  guides(color = F)
+  coord_quickmap() 
 ```
 
