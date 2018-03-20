@@ -1,9 +1,11 @@
 Intro to Data Science - Wildfire dataset
 ================
-Elias M Guerra
-3/19/2018
 
-First we'll load the necessary packages. Download the dataset and cut it down to size.
+Elias M Guerra
+
+December 2017
+
+First we'll load the necessary packages, download the dataset and cut it down to size.
 
 ``` r
 library(dplyr)
@@ -31,7 +33,7 @@ ff <- fread('~/Documents/r/math216/fires_shortversion.csv')
 ```
 
     ## 
-    Read 58.0% of 1880465 rows
+    Read 57.4% of 1880465 rows
     Read 1880465 rows and 9 (of 9) columns from 0.105 GB file in 00:00:03
 
 ``` r

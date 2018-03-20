@@ -1,11 +1,13 @@
 ---
 title: "Intro to Data Science - Wildfire dataset"
-author: "Elias M Guerra"
-date: "3/19/2018"
 output: github_document
 ---
 
-First we'll load the necessary packages. Download the dataset and cut it down to size. 
+Elias M Guerra
+
+December 2017
+
+First we'll load the necessary packages, download the dataset and cut it down to size. 
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(dplyr)
