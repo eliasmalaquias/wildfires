@@ -7,7 +7,7 @@ Elias M Guerra
 
 December 2017
 
-First we'll load the necessary packages, download the dataset and cut it down to size. 
+First we'll load the necessary packages, download the dataset, and cut it down to size. 
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(dplyr)
@@ -51,8 +51,8 @@ world <- map_data("world")
 ggplot() + 
   geom_map(data=world, map=world, aes(x=long, y=lat, map_id=region), color="white", size=0.05, alpha=1/4) + 
   geom_point(data = sample_n(ff, 10000), aes(longitude, latitude, color = fire_size_class), alpha = .1) +
-  ylim(10,75) + xlim(-175,-40) +
   coord_quickmap() +
+  ylim(10,75) + xlim(-175,-40) +
   guides(color = "none")
 ```
 
@@ -84,7 +84,11 @@ ff %>%
 ggplot() +
   geom_map(data=world, map=world, aes(x=long, y=lat, map_id=region), color="white", size=0.05, alpha=1/4) +
   geom_point(data = ff[ff$fire_size_class %in% c("F", "G"),], aes(longitude, latitude, color = fire_size_class), alpha = .1) +
+  coord_quickmap() +
   ylim(10,75) + xlim(-175,-40) +
-  coord_quickmap() 
+  guides(color = "none")
 ```
 
+#### References
+
+Short, Karen C. 2017. Spatial wildfire occurrence data for the United States, 1992-2015 [FPA_FOD_20170508]. 4th Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2013-0009.4

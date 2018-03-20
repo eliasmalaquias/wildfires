@@ -5,7 +5,7 @@ Elias M Guerra
 
 December 2017
 
-First we'll load the necessary packages, download the dataset and cut it down to size.
+First we'll load the necessary packages, download the dataset, and cut it down to size.
 
 ``` r
 library(dplyr)
@@ -33,7 +33,7 @@ ff <- fread('~/Documents/r/math216/fires_shortversion.csv')
 ```
 
     ## 
-    Read 57.4% of 1880465 rows
+    Read 74.4% of 1880465 rows
     Read 1880465 rows and 9 (of 9) columns from 0.105 GB file in 00:00:03
 
 ``` r
@@ -60,8 +60,8 @@ world <- map_data("world")
 ggplot() + 
   geom_map(data=world, map=world, aes(x=long, y=lat, map_id=region), color="white", size=0.05, alpha=1/4) + 
   geom_point(data = sample_n(ff, 10000), aes(longitude, latitude, color = fire_size_class), alpha = .1) +
-  ylim(10,75) + xlim(-175,-40) +
   coord_quickmap() +
+  ylim(10,75) + xlim(-175,-40) +
   guides(color = "none")
 ```
 
@@ -98,7 +98,12 @@ ggplot() +
   geom_map(data=world, map=world, aes(x=long, y=lat, map_id=region), color="white", size=0.05, alpha=1/4) +
   geom_point(data = ff[ff$fire_size_class %in% c("F", "G"),], aes(longitude, latitude, color = fire_size_class), alpha = .1) +
   ylim(10,75) + xlim(-175,-40) +
-  coord_quickmap() 
+  coord_quickmap() +
+  guides(color = "none")
 ```
 
 ![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-2.png)
+
+#### References
+
+Short, Karen C. 2017. Spatial wildfire occurrence data for the United States, 1992-2015 \[FPA\_FOD\_20170508\]. 4th Edition. Fort Collins, CO: Forest Service Research Data Archive. <https://doi.org/10.2737/RDS-2013-0009.4>
