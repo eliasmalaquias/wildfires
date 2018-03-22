@@ -3,8 +3,6 @@ title: "Intro to Data Science - Wildfire dataset"
 output: github_document
 ---
 
-Elias M Guerra
-
 December 2017
 
 First we'll load the necessary packages, download the dataset, and cut it down to size. 
@@ -15,6 +13,7 @@ library(ggplot2)
 library(stringr)
 library(knitr)
 library(data.table)
+library(tibble)
 
 # Wildfires between 1992 and 2015
 # https://www.kaggle.com/captcalculator/wildfire-exploratory-analysis/data
@@ -88,6 +87,183 @@ ggplot() +
   ylim(10,75) + xlim(-175,-40) +
   guides(color = "none")
 ```
+
+It appears that much more of the west is suffering from large wildfires. In particular the Pacific Northwest and Alaska have a lot of fires greater than 5,000 acres. 
+
+Next we'll address the question of how wildfires are changing over time. A linear regression will suffice for this. 
+
+```{r, message=FALSE, warning=FALSE, paged.print=FALSE, echo=FALSE }
+lm_allfires <- lm(fire_size ~ year, data = ff)
+
+ff %>% 
+  sample_n(10000) %>% 
+  ggplot + 
+  geom_point(aes(fire_year, fire_size, color = fire_size_class), alpha = .6) + 
+  scale_y_log10() +
+  geom_smooth(aes(fire_year, fire_size), alpha = .6, method = "lm", se = F, color = "black") + 
+  ylab("fire size (acres)") +
+  xlab("year") +
+  scale_fill_discrete(name = "Fire size class") + 
+  annotate("text",  x = 1995, y = 4e4, label = "f(x) = 2.64x - 5219 \n R^2 = 4.9e-5 \n p < 0.0001") +
+  ggtitle("All fire sizes") +
+  guides(color = F)
+```
+
+According to our regression there are 2.6 more wildfires (all sizes) per year and the relationship is very significant. Note the very small r-squared value indicating that less than a percent of the relationship is explained by the regression. Also, graphs of fire size over time use a log scale on the y-axis to better show the distribution. 
+
+```{r, message=FALSE, warning=FALSE, paged.print=FALSE, echo=FALSE }
+lm(fire_size ~ year, data = ff[ff$fire_size > 1000,])
+
+ff %>% filter(fire_size > 1000) %>% 
+  ggplot + geom_point(aes(fire_year, fire_size, color = fire_size_class), alpha = .6) + 
+  scale_y_log10() +
+  geom_smooth(aes(fire_year, fire_size), alpha = .6, method = "lm", se = F, color = "black") + 
+  ggtitle("Fire size: >1000 acres") +
+  ylab("fire size (acres)") +
+  xlab("year") +
+  annotate("text",  x = 1996, y = 3e5, label = "f(x) = 241x - 423384 \n R^2 = 0.002 \n p = 7.2e-8") +
+  guides(color = F)
+```
+
+A linear regression applied to all wildfires over 1,000 acres shows that there are 241 more per year and the relationship is highly significant. Also the r-squared value indicates that 0.2% of the data is explained by the regression.
+
+```{r, message=FALSE, warning=FALSE, paged.print=FALSE, echo=FALSE }
+lm(fire_size ~ year, data = ff[ff$fire_size > 5000,])
+
+ff %>% filter(fire_size > 5000) %>% 
+  ggplot + geom_point(aes(fire_year, fire_size, color = fire_size_class), alpha = .6) + 
+  scale_fill_discrete(guide = F) + 
+  scale_y_log10() +
+  geom_smooth(aes(fire_year, fire_size), alpha = .6, method = "lm", se = F, color = "black") + 
+  ggtitle("Fire size: >5000 acres") +
+  ylab("fire size (acres)") +
+  xlab("year") +
+  annotate("text",  x = 1996, y = 3e5, label = "f(x) = 393x - 759765 \n R^2 = 0.002 \n p < 0.005") 
+```
+ 
+ A linear regression applied to all wildfires over 5,000 acres indicates there are almost 400 more per year. The relationship is quite significant but only 0.2% of the data are explained by the regression.
+
+```{r, message=FALSE, warning=FALSE, paged.print=FALSE, echo=FALSE }
+## 16 states
+fireStates <- as.data.frame(as.matrix(table(ff$state[ff$fire_size >1000]))) %>% rownames_to_column() %>% top_n(16, V1)
+fireStates <- fireStates$rowname
+list_of_plots <- list()
+df_regression <- data.frame()
+for(r in 1:16) {
+  i <- fireStates[r]
+  working_data <- ff %>% filter(fire_size > 1000, state == i) 
+  list_of_plots[[r]] <-
+  working_data %>%
+    ggplot + geom_point(aes(year, fire_size, color = fire_size_class)) +
+    geom_smooth(aes(year, fire_size), method = "lm", se = F, color = "black") +
+    theme(legend.position="none") +
+    scale_y_log10() +
+    ylab(NULL) + xlab(NULL) +
+    ggtitle(i)
+  lm_working <- lm(fire_size ~ year, data = working_data)
+  lm_sum <- summary(lm_working)
+  new_row <- cbind(
+    state = i,
+    slope = lm_sum$coefficients[2,1],
+    intercept = lm_sum$coefficients[1,1],
+    p_value = lm_sum$coefficients[2,4],
+    r_sq = lm_sum$r.squared
+  )
+  df_regression <- rbind(df_regression, new_row)
+}
+
+
+
+## MULTIPLOT FUNCTION ###############################
+# Multiple plot function from http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_(ggplot2)/
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+multiplot(plotlist = list_of_plots, layout = matrix(1:16, byrow = T, nrow = 4))
+```
+
+```{r, message=FALSE, warning=FALSE, paged.print=FALSE, echo=FALSE }
+df_regression1 <- fread("~/Documents/R/math216/fire_regression.csv")
+df_regression1 <- df_regression1[,-3]
+df_regression1[,2] <- round(df_regression1[,2],0)
+df_regression1[,3] <- round(df_regression1[,3],4)
+df_regression1[,4] <- round(df_regression1[,4],4)
+df_regression1 <- arrange(df_regression1, p_value)
+colnames(df_regression1) <- c("state","slope", "p value", "r squared")
+kable(df_regression1)
+```
+
+Applying a linear regression to wildfires over 1,000 acres in the 16 states with the most large fires reveals that in only two states is the relationship highly significant (p < 0.001): California and New Mexico. In both states there are more than 400 more wildires per year and more than 1% of the data is explained by the regression. 
+
+```{r, message=FALSE, warning=FALSE, paged.print=FALSE, echo=FALSE }
+## The west is burning
+westcoast_map <- map_data("state")  
+westcoast_map <- westcoast_map[westcoast_map$region %in% c("california","oregon","washington", "new mexico", "arizona"),]
+wc <- ff[ff$state %in% c("CA","WA","OR", "NM", "AZ"),]
+# plot(wc$fire_year, wc$fire_size)
+# plot(wc$fire_size ~ wc$longitude)
+# plot(wc$fire_size ~ wc$latitude)
+## 1992-2002
+ggplot() + geom_map(data = westcoast_map, map = westcoast_map, aes(long, lat, map_id = region), alpha = .6, color = "black", fill = "tan") +
+  coord_quickmap() +
+  geom_point(data = wc[wc$year %in% 1992:2002 & wc$fire_size > 1000,], aes(longitude, latitude, color = fire_size, size = fire_size), alpha = .8) +
+  scale_color_gradient(high = "#f03b20", low = "#feb24c", name = "fire size (acres)", limits = c(0,600000)) + 
+  guides(size = F) +
+  ggtitle("1992-2002") 
+## 2005-2015
+ggplot() + geom_map(data = westcoast_map, map = westcoast_map, aes(long, lat, map_id = region), alpha = .6, color = "black", fill = "tan") +
+  coord_quickmap() +
+  geom_point(data = wc[wc$year %in% 2005:2015 & wc$fire_size > 1000,], aes(longitude, latitude, color = fire_size, size = fire_size), alpha = .8) +
+  scale_color_gradient(high = "#f03b20", low = "#feb24c", name = "fire size (acres)", limits = c(0,600000)) + 
+  guides(size = F) + 
+  ggtitle("2005-2015") 
+```
+
+When we map the largest fires (>1000 acres) in the West we can actually see the differences between the former and latter decades of the study period. 
+
+This last analysis was pretty experimental. I began by downloading raster maps (maps made of pixels rather than polygons) of the average yearly maximum temperature for the US from 1992 to 2015. For each wildfire I averaged the temperatures from the cells immediately surrounding the point based on coordinates. Averages were based on 4 to 9 neighboring cells. I captured neighboring cells simply by rounding the coordinates of the wildfire site and the neighboring sites and using matching data points.
 
 #### References
 
